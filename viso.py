@@ -72,8 +72,8 @@ city_guests = df_city['arrival_month'].value_counts().sort_index()
 
 # Line chart for Resort and City
 fig3 = go.Figure()
-fig3.add_trace(go.Scatter(x=resort_guests.index, y=resort_guests.values, mode='lines+markers', name='Resort', line=dict(color='deepskyblue')))
-fig3.add_trace(go.Scatter(x=city_guests.index, y=city_guests.values, mode='lines+markers', name='City', line=dict(color='firebrick')))
+fig3.add_trace(go.Scatter(x=resort_guests.index, y=resort_guests.values, mode='lines+markers', name='Resort', line=dict(color='blue')))
+fig3.add_trace(go.Scatter(x=city_guests.index, y=city_guests.values, mode='lines+markers', name='City', line=dict(color='red')))
 fig3.update_layout(title_text="Total guests by month", xaxis_title="Month", yaxis_title="Number of Guests")
 
 # Filter data where 'is_canceled' is 1 (meaning the booking was cancelled)
