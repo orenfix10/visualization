@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-
 # Load the data
 df = pd.read_csv("hotel_bookings.csv")
 
@@ -13,13 +12,46 @@ df['arrival_month'] = df['arrival_date_month'].dt.month.astype(int)
 
 # Set the title of the app
 st.title('Hotel Bookings Analysis')
+st.markdown(
+    "This dashboard aims to analyze and present global hotel reservation data, specifically for city and resort hotels. Our goal is to identify key booking trends such as most frequent guests, their origin countries, peak booking times, and monthly cancellation rates. This data will help reveal unique hotel characteristics, providing valuable insights for hotel owners on topics like busiest months, likely cancellations, and profitable reservation types, thereby aiding them in making informed business decisions.")
+st.markdown("------------------")  # Add a horizontal line
+
+# Create a grouped dataframe for the plot
+df_grouped = df.groupby(['country', 'hotel']).size().reset_index(name='counts')
+
+# Pivot the dataframe to have hotels as columns
+df_pivot = df_grouped.pivot(index='country', columns='hotel', values='counts').reset_index().fillna(0)
+df_pivot['total'] = df_pivot['City Hotel'] + df_pivot['Resort Hotel']
+
+# Create the interactive plot
+fig1 = px.choropleth(df_pivot, locations='country', color='total',
+                     title='Number of Bookings Per Country',
+                     labels={'total': 'Total Number of Bookings', 'country': 'Country'},
+                     hover_name='country',
+                     color_continuous_scale=px.colors.sequential.Plasma,
+                     projection='natural earth',
+                     hover_data={'City Hotel': True, 'Resort Hotel': True})
+
+st.plotly_chart(fig1)
+st.markdown(
+    "This choropleth map shows the total number of bookings per country. It provides a global view of where the hotel's guests are coming from."
+    "we can see that in west europe, the number of bookings is higher than other regions.")
+st.markdown("------------------")  # Add a horizontal line
 
 # Date range slider for selecting a specific time period
 date_range = st.slider("Select a Month Range", min_value=int(df['arrival_month'].min()),
-                       max_value=int(df['arrival_month'].max()), value=(int(df['arrival_month'].min()), int(df['arrival_month'].max())))
+                       max_value=int(df['arrival_month'].max()),
+                       value=(int(df['arrival_month'].min()), int(df['arrival_month'].max())))
 
 # Filter the data based on the selected date range
 df_filtered = df[(df['arrival_month'] >= date_range[0]) & (df['arrival_month'] <= date_range[1])]
+
+# Add a selectbox for country selection
+country_options = ['All'] + list(df_filtered['country'].unique())
+selected_country = st.sidebar.selectbox('Select Country', options=country_options)
+
+if selected_country != 'All':
+    df_filtered = df_filtered[df_filtered['country'] == selected_country]
 
 # Add a selectbox for hotel type
 hotel_type = st.sidebar.selectbox('Select Hotel Type', options=['All'] + list(df_filtered['hotel'].unique()))
@@ -32,31 +64,14 @@ if not include_cancelled:
     df_filtered = df_filtered[df_filtered['is_canceled'] == 0]
 
 # Add a data overview section
-if st.sidebar.checkbox('Show Data Overview'):
+if st.sidebar.checkbox('Show Data Overview', value=True):
     st.subheader('Data Overview')
-    st.write(df_filtered.head())
+
+    # Add a number input field to select the number of rows
+    num_rows = st.number_input('Enter number of rows', min_value=5, max_value=df_filtered.shape[0], value=5)
+
+    st.write(df_filtered.head(num_rows))
     st.write(f"Number of rows: {df_filtered.shape[0]}")
-    st.write(f"Number of columns: {df_filtered.shape[1]}")
-
-# Filter out rows with missing country data
-df_country = df_filtered[df_filtered['country'].notna()]
-
-# Create a grouped dataframe for the plot
-df_grouped = df.groupby(['country', 'hotel']).size().reset_index(name='counts')
-
-# Pivot the dataframe to have hotels as columns
-df_pivot = df_grouped.pivot(index='country', columns='hotel', values='counts').reset_index().fillna(0)
-df_pivot['total'] = df_pivot['City Hotel'] + df_pivot['Resort Hotel']
-
-# Create the interactive plot
-fig1 = px.choropleth(df_pivot, locations='country', color='total',
-                    title='Number of Bookings Per Country',
-                    labels={'total': 'Total Number of Bookings', 'country': 'Country'},
-                    hover_name='country',
-                    color_continuous_scale=px.colors.sequential.Plasma,
-                    projection='natural earth',
-                    hover_data={'City Hotel': True, 'Resort Hotel': True})
-
 
 # Filter for each hotel type
 df_resort = df_filtered[df_filtered['hotel'] == 'Resort Hotel']
@@ -78,7 +93,6 @@ fig3 = go.Figure(data=[go.Pie(labels=city_guests.index,
                               hole=.3)])  # hole parameter creates a donut chart
 fig3.update_layout(title_text="Total guests for City by month")
 
-
 # Filter data where 'is_canceled' is 1 (meaning the booking was cancelled)
 canceled = df_filtered[df_filtered['is_canceled'] == 1]
 
@@ -90,7 +104,7 @@ cancellation_counts = cancellation_counts.sort_values('cancellation_count', asce
 # Create a bar chart for cancellations by distribution channel and hotel type
 fig4 = px.bar(cancellation_counts, x='distribution_channel', y='cancellation_count', color='hotel',
               title='Cancellation Counts by Distribution Channel and Hotel Type',
-              color_discrete_sequence=["blue", "green"])
+              color_discrete_sequence=["green", "blue"])
 
 # For each hotel type
 temp = pd.DataFrame()
@@ -120,16 +134,21 @@ fig5 = px.bar(temp_melt,
 button_labels = ['Hotel Type per Country', 'Total guests for Resort by month',
                  'Total guests for City by month', 'Cancellation Counts by Distribution Channel',
                  'Total guests for each hotel Grouped by market segment']
-button_values = [0, 1, 2, 3, 4]
+button_values = [1, 2, 3, 4]
 selected_button = st.radio('Select a graph to display:', button_values, format_func=lambda x: button_labels[x])
 
-if selected_button == 0:
-    st.plotly_chart(fig1)
-elif selected_button == 1:
+if selected_button == 1:
     st.plotly_chart(fig2)
+    st.markdown("This graph illustrates that the Resort Hotel experiences a surge in bookings during the summer months, while witnessing a decline in reservations at the onset of the year, particularly in the winter season.")
 elif selected_button == 2:
     st.plotly_chart(fig3)
+    st.markdown(
+        "The graph reveals a pattern where the City Hotel sees a peak in bookings during the summer season, whereas the reservations tend to dip during the winter months, especially at the beginning of the year.")
 elif selected_button == 3:
     st.plotly_chart(fig4)
+    st.markdown(
+        "The graph demonstrates that the majority of cancellations are initiated via travel agencies or tour operators. Furthermore, it's evident that the City Hotel experiences a higher rate of cancellations compared to the Resort Hotel.")
 elif selected_button == 4:
     st.plotly_chart(fig5)
+    st.markdown(
+        "This graph indicates that the predominant channel for bookings is through online travel agencies. Additionally, it's observable that the City Hotel garners more bookings across all market segments, with the exception of direct bookings, where the Resort Hotel takes the lead.")
