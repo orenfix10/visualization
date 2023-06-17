@@ -60,26 +60,7 @@ if st.sidebar.checkbox('Show Data Overview', value=True):
 
     st.write(df_filtered.head(num_rows))
     st.write(f"Number of rows: {df_filtered.shape[0]}")
-#
-# # Filter for each hotel type
-# df_resort = df_filtered[df_filtered['hotel'] == 'Resort Hotel']
-# df_city = df_filtered[df_filtered['hotel'] == 'City Hotel']
-#
-# # Calculate the total guests for each month
-# resort_guests = df_resort['arrival_month'].value_counts()
-# city_guests = df_city['arrival_month'].value_counts()
-#
-# # Pie chart for Resort
-# fig2 = go.Figure(data=[go.Pie(labels=resort_guests.index,
-#                               values=resort_guests.values,
-#                               hole=.3)])  # hole parameter creates a donut chart
-# fig2.update_layout(title_text="Total guests for Resort by month")
-#
-# # Pie chart for City
-# fig3 = go.Figure(data=[go.Pie(labels=city_guests.index,
-#                               values=city_guests.values,
-#                               hole=.3)])  # hole parameter creates a donut chart
-# fig3.update_layout(title_text="Total guests for City by month")
+
 
 # Filter for each hotel type
 df_resort = df_filtered[df_filtered['hotel'] == 'Resort Hotel']
@@ -91,8 +72,8 @@ city_guests = df_city['arrival_month'].value_counts().sort_index()
 
 # Line chart for Resort and City
 fig3 = go.Figure()
-fig3.add_trace(go.Scatter(x=resort_guests.index, y=resort_guests.values, mode='lines+markers', name='Resort'))
-fig3.add_trace(go.Scatter(x=city_guests.index, y=city_guests.values, mode='lines+markers', name='City'))
+fig3.add_trace(go.Scatter(x=resort_guests.index, y=resort_guests.values, mode='lines+markers', name='Resort', line=dict(color='deepskyblue')))
+fig3.add_trace(go.Scatter(x=city_guests.index, y=city_guests.values, mode='lines+markers', name='City', line=dict(color='firebrick')))
 fig3.update_layout(title_text="Total guests by month", xaxis_title="Month", yaxis_title="Number of Guests")
 
 # Filter data where 'is_canceled' is 1 (meaning the booking was cancelled)
